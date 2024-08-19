@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Set, Tuple, List
 import time
 
+
 class Cell:
     """
     Represents a cell on the chess board.
@@ -10,6 +11,7 @@ class Cell:
         col (int): The column of the cell.
         row (int): The row of the cell.
     """
+
     def __init__(self, col: int, row: int) -> None:
         self.col = col
         self.row = row
@@ -31,6 +33,20 @@ class Cell:
         """Provides a hash based on the cell's position."""
         return hash(self.position)
 
+
+def _populate_board(n: int) -> List[List[Cell]]:
+    """
+    Populates the board with Cell objects.
+
+    Args:
+        n (int): The size of the board (n x n).
+
+    Returns:
+        List[List[Cell]]: The populated board.
+    """
+    return [[Cell(col, row) for col in range(n)] for row in range(n)]
+
+
 class Board:
     """
     Represents the chess board and handles the Knight's Tour problem.
@@ -41,18 +57,20 @@ class Board:
         board (List[List[Cell]]): The 2D list of Cell objects.
         solution (List[List[int]]): The 2D list tracking the solution path.
         move_path (List[Tuple[int, int]]): The list of moves taken by the knight.
-        visited_positions (Set[Tuple[int, int]]): The set of visited positions.
+        visits (Set[Tuple[int, int]]): The set of visited positions.
     """
+
     def __init__(self, knight: Knight = None, n: int = 8) -> None:
         self.n = n
-        self.board = self._populate_board(n)
-        self.knight = knight if knight else Knight()
+        self.board = _populate_board(n)
+        self.knight = knight
         self.solution = [[-1 for _ in range(n)] for _ in range(n)]
         self.solution[0][0] = 0
         self.move_path = [(0, 0)]
-        self.visited_positions = {(0, 0)}
+        self.visits = {(0, 0)}
         self.knight.position = (0, 0)
 
+    # TODO: use ncurses to display solution in terminal
     def show(self) -> None:
         """
         Displays the current state of the chess board.
@@ -67,7 +85,7 @@ class Board:
             for col in range(self.n):
                 if (row, col) == self.knight.position:
                     print("\033[31m K \033[0m", end="")
-                elif (row, col) in self.visited_positions:
+                elif (row, col) in self.visits:
                     print("\033[33m o \033[0m", end="")
                 else:
                     print(" . ", end="")
@@ -100,26 +118,26 @@ class Board:
         """
         if move_count == self.n * self.n:
             return True
-        
-        for x_offset, y_offset in self.knight.offsets:
-            next_row, next_col = row + x_offset, col + y_offset
+
+        for dx, dy in self.knight.offsets:
+            next_row, next_col = row + dx, col + dy
 
             if self._is_valid(next_row, next_col):
                 self.solution[next_row][next_col] = move_count
                 self.knight.position = (next_row, next_col)
-                self.visited_positions.add((next_row, next_col))
-                
+                self.visits.add((next_row, next_col))
+
                 self.show()
                 print(f"Move: {move_count}")
                 time.sleep(0.2)
                 print("\033[H\033[J", end="")  # Clear the terminal screen
-                
+
                 if self._solve_knight_tour(next_row, next_col, move_count + 1):
                     return True
-                
+
                 self.solution[next_row][next_col] = -1
-                self.visited_positions.remove((next_row, next_col))
-        
+                self.visits.remove((next_row, next_col))
+
         return False
 
     def _is_valid(self, row: int, col: int) -> bool:
@@ -135,17 +153,6 @@ class Board:
         """
         return 0 <= row < self.n and 0 <= col < self.n and self.solution[row][col] == -1
 
-    def _populate_board(self, n: int) -> List[List[Cell]]:
-        """
-        Populates the board with Cell objects.
-
-        Args:
-            n (int): The size of the board (n x n).
-
-        Returns:
-            List[List[Cell]]: The populated board.
-        """
-        return [[Cell(col, row) for col in range(n)] for row in range(n)]
 
 class Knight:
     """
@@ -155,6 +162,7 @@ class Knight:
         cell (Cell): The current cell of the knight.
         offsets (List[Tuple[int, int]]): The possible move offsets for the knight.
     """
+
     def __init__(self) -> None:
         self._position = (0, 0)
         self.offsets = [
@@ -171,8 +179,9 @@ class Knight:
     def position(self, pos: Tuple[int, int]) -> None:
         self._position = pos
 
+
 if __name__ == "__main__":
-    k = Knight
+    k = Knight()
     b = Board(knight=k, n=8)
 
     if b.solve():
