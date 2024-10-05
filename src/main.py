@@ -1,6 +1,8 @@
 from __future__ import annotations
-from typing import Set, Tuple, List
+
+import functools
 import time
+from typing import Set, Tuple, List
 
 
 class Cell:
@@ -8,22 +10,22 @@ class Cell:
     Represents a cell on the chess board.
 
     Attributes:
-        col (int): The column of the cell.
-        row (int): The row of the cell.
+        y (int): The y of the cell.
+        x (int): The x of the cell.
     """
 
-    def __init__(self, col: int, row: int) -> None:
-        self.col = col
-        self.row = row
+    def __init__(self, y: int, x: int) -> None:
+        self.y = y
+        self.x = x
 
     @property
     def position(self) -> Tuple[int, int]:
-        """Gets or sets the (col, row) position of the cell."""
-        return self.col, self.row
+        """Gets or sets the (y, x) position of the cell."""
+        return self.y, self.x
 
     @position.setter
     def position(self, pos: Tuple[int, int]) -> None:
-        self.col, self.row = pos
+        self.y, self.x = pos
 
     def __eq__(self, other: Cell) -> bool:
         """Checks equality based on position."""
@@ -44,7 +46,7 @@ def _populate_board(n: int) -> List[List[Cell]]:
     Returns:
         List[List[Cell]]: The populated board.
     """
-    return [[Cell(col, row) for col in range(n)] for row in range(n)]
+    return [[Cell(y, x) for y in range(n)] for x in range(n)]
 
 
 class Board:
@@ -70,47 +72,26 @@ class Board:
         self.visits = {(0, 0)}
         self.knight.position = (0, 0)
 
-    # TODO: use ncurses to display solution in terminal
-    def show(self) -> None:
-        """
-        Displays the current state of the chess board.
-        The knight is represented by 'K' and visited cells by 'o'.
-        """
-        print("   ", end="")
-        for col in range(self.n):
-            print(f" {col} ", end="")
-        print()
-        for row in range(self.n):
-            print(f" {row} ", end="")
-            for col in range(self.n):
-                if (row, col) == self.knight.position:
-                    print("\033[31m K \033[0m", end="")
-                elif (row, col) in self.visits:
-                    print("\033[33m o \033[0m", end="")
-                else:
-                    print(" . ", end="")
-            print()
-
+    @functools.cache
     def solve(self) -> bool:
         """
         Attempts to solve the Knight's Tour problem.
-        
+
         Returns:
             bool: True if a solution is found, False otherwise.
         """
         if self._solve_knight_tour(0, 0, 1):
             return True
         else:
-            print("No solution found")
             return False
 
-    def _solve_knight_tour(self, row: int, col: int, move_count: int) -> bool:
+    def _solve_knight_tour(self, x: int, y: int, move_count: int) -> bool:
         """
         Uses backtracking to solve the Knight's Tour problem.
 
         Args:
-            row (int): The current row of the knight.
-            col (int): The current column of the knight.
+            x (int): The current x of the knight.
+            y (int): The current y of the knight.
             move_count (int): The current move number.
 
         Returns:
@@ -120,38 +101,33 @@ class Board:
             return True
 
         for dx, dy in self.knight.offsets:
-            next_row, next_col = row + dx, col + dy
+            nx, ny = x + dx, y + dy
 
-            if self._is_valid(next_row, next_col):
-                self.solution[next_row][next_col] = move_count
-                self.knight.position = (next_row, next_col)
-                self.visits.add((next_row, next_col))
+            if self._is_valid(nx, ny):
+                self.solution[nx][ny] = move_count
+                self.knight.position = (nx, ny)
+                self.visits.add((nx, ny))
 
-                self.show()
-                print(f"Move: {move_count}")
-                time.sleep(0.2)
-                print("\033[H\033[J", end="")  # Clear the terminal screen
-
-                if self._solve_knight_tour(next_row, next_col, move_count + 1):
+                if self._solve_knight_tour(nx, ny, move_count + 1):
                     return True
 
-                self.solution[next_row][next_col] = -1
-                self.visits.remove((next_row, next_col))
+                self.solution[nx][ny] = -1
+                self.visits.remove((nx, ny))
 
         return False
 
-    def _is_valid(self, row: int, col: int) -> bool:
+    def _is_valid(self, x: int, y: int) -> bool:
         """
         Checks if a move is valid (within board boundaries and not yet visited).
 
         Args:
-            row (int): The row to check.
-            col (int): The column to check.
+            x (int): The x to check.
+            y (int): The yumn to check.
 
         Returns:
             bool: True if the move is valid, False otherwise.
         """
-        return 0 <= row < self.n and 0 <= col < self.n and self.solution[row][col] == -1
+        return 0 <= x < self.n and 0 <= y < self.n and self.solution[x][y] == -1
 
 
 class Knight:
@@ -181,10 +157,10 @@ class Knight:
 
 
 if __name__ == "__main__":
+    st = time.time()
     k = Knight()
     b = Board(knight=k, n=8)
 
-    if b.solve():
-        print("Solution found")
-    else:
-        print("No solution found")
+    ans = b.solve()
+
+    print(f"runtime: {(time.time() - st):.2f} s - {ans}")
