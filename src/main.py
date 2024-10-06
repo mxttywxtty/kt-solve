@@ -96,30 +96,28 @@ def kt(board, x, y, pos):
     if pos == N * N:
         return True
 
-    min_deg_idx = -1
-    min_deg = N + 1
-    next_x, next_y = -1, -1
+    idx = -1
+    temp = N + 1
+    nnx, nny = -1, -1
 
     for i in range(8):
         nx, ny = x + MX[i], y + MY[i]
         if check(nx, ny, board):
             deg = degree(nx, ny, board)
-            if deg < min_deg:
-                min_deg = deg
-                min_deg_idx = i
-                next_x, next_y = nx, ny
+            if deg < temp:
+                temp = deg
+                idx = i
+                nnx, nny = nx, ny
 
-    if min_deg_idx == -1:  # No valid move found (dead-end)
+    if idx == -1:  # No valid move found (dead-end)
         return False
 
-    board[next_x][next_y] = pos
+    board[nnx][nny] = pos
 
-    if kt(board, next_x, next_y, pos + 1):
+    if kt(board, nnx, nny, pos + 1):
         return True
 
-    # Backtrack if no solution was found on this path
-    board[next_x][next_y] = -1
-
+    board[nnx][nny] = -1
     return False
 
 
